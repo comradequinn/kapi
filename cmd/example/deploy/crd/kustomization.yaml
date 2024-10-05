@@ -1,0 +1,4 @@
+resources:
+- crd.yaml
+
+namespace: kapi-example

@@ -1,0 +1,26 @@
+name: 'CI'
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23.3'
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: |-
+        which kubectl > /dev/null || (echo "kubectl not found, installing..." && sudo apt update && sudo apt install -y kubectl)
+        which kind > /dev/null || (echo "kind not found, installing..." && go install sigs.k8s.io/kind@latest && echo "kind installed successfully")
+        go test -v ./...

@@ -1,0 +1,6 @@
+apiVersion: kapi-example.comradequinn.github.io/v1
+kind: ConfigAudit
+metadata:
+  name: configaudit-manual-1
+spec:
+  message: "manually deployed audit"

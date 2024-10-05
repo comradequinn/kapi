@@ -1,0 +1,5 @@
+resources:
+- configmap.yaml
+#- cr.yaml # uncomment this line to deploy the configaudit resource
+
+namespace: kapi-example
