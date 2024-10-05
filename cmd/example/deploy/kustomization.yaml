@@ -1,0 +1,7 @@
+resources:
+- crd
+- namespace.yaml
+- rbac.yaml
+- deployment.yaml
+
+namespace: kapi-example

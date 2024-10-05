@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kapi-example
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: kapi-example
+  template:
+    metadata:
+      labels:
+        name: kapi-example
+    spec:
+      serviceAccountName: kapi-example
+      containers:
+      - name: kapi-example
+        image: kapi-example:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
