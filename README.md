@@ -321,6 +321,14 @@ In this example, `kapi.FieldUndefined` is used as a placeholder for fields that 
 
 Using type aliases, like `ExampleResource` and `ExampleResourceList` in the snippet above, improves code clarity both by providing meaningful names for types and by reducing the repetition of generic type arguments.
 
+### Deployment
+
+The lib-oriented approach of `kapi` allows for the definition and deployment of controllers and operators in a way that better suits existing architectures and deployment pipelines.
+
+Deploying a `kapi`-based controller is simply a matter of creating a `deployment` in your usual manner. 
+
+This is in contrast to `kubebuilder`, which relies heavily on code generation and predefined templates to scaffold controllers; meaning the resulting code can be challenging to integrate into existing project structures or deployment processes.
+
 ## Metrics and Logging
 
 The `kapi` package provides comprehensive observability through structured logging and metrics. Here's an overview of the types of metrics and logs emitted:

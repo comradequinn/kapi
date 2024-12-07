@@ -19,6 +19,7 @@ KAPI_CLUSTER=kapi
 KAPI_NAMESPACE=kapi-example
 BUILD_IMAGE=true
 
+# Creates a sandbox k8s cluster for kapi using kind
 .PHONY: example-cluster
 example-cluster:
 	@which kind > /dev/null || (echo "kind not found, installing..." && go install sigs.k8s.io/kind@latest && echo "kind installed successfully")
