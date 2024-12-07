@@ -37,11 +37,25 @@ type (
 		// This canis typically used in scenarios where resources are modified outside of the kapi.Cluster scope or where
 		// resource modifications need to be reflected immediately
 		DisableCaching bool
+		// LeaderElectionConfig defines the configuration for leader election. By default it is disabled.
+		// Enabling leader election allows multiple replicas of a kapi based controller or operator to be deployed to support high availabity
+		LeaderElection LeaderElectionConfig
 		// Namespaces defines the namespaces for which to invoke configured Reconcilers
 		// An empty slice results in applicable Reconcilers being invoked for all namespaces
 		Namespaces []string
 		// CRDs defines any CRDs that the Cluster must recognise
 		CRDs []CRDs
+	}
+	// LeaderElectionConfig defines the configuration for the leader elections of high availablity deployments
+	LeaderElectionConfig struct {
+		// Enabled enables leader election for kpai based controllers or operators running multiple replicas to support high availabity
+		Enabled bool
+		// LockResource defines the name of the resource that will be used as the lock resource in leader elections.
+		// This should be set to a unique value for the consuming application to avoid conflicts with other application's leader elections
+		LockResource string
+		// Namespace defines the namespace in which the leader election resource will be created.
+		// This can be unset if the cluster.Config namespace is set to one or more namespaces, which will result in the first namespace in the list being used
+		Namespace string
 	}
 	// CRDs defines a mapping between a set of one or more structs that each represent a CRD and the k8s API Group and Version that they are defined within
 	CRDs struct {
@@ -82,6 +96,19 @@ func Init(cfg ObservabilityConfig) {
 // creating two kapi.Clusters with one Reconciler attached to each
 func NewCluster(ctx context.Context, cfg ClusterConfig) (*Cluster, error) {
 	defer obs.MetricTimerFunc(ctx, "kapi_new_cluster")()
+
+	if cfg.LeaderElection.Enabled {
+		if cfg.LeaderElection.LockResource == "" {
+			panic("a leader-election-resource must be set, unless leader elections are disabled")
+		}
+
+		if cfg.LeaderElection.Namespace == "" {
+			if len(cfg.Namespaces) == 0 {
+				panic("a namespace must be set, unless leader elections are disabled")
+			}
+			cfg.LeaderElection.Namespace = cfg.Namespaces[0]
+		}
+	}
 
 	scheme := runtime.NewScheme()
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -124,6 +151,10 @@ func NewCluster(ctx context.Context, cfg ClusterConfig) (*Cluster, error) {
 		WebhookServer: webhook.NewServer(webhook.Options{
 			CertDir: cfg.TLS,
 		}),
+
+		LeaderElection:          cfg.LeaderElection.Enabled,
+		LeaderElectionID:        cfg.LeaderElection.LockResource,
+		LeaderElectionNamespace: cfg.LeaderElection.Namespace,
 	})
 
 	if err != nil {

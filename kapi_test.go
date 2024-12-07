@@ -45,6 +45,10 @@ func TestMain(m *testing.M) {
 
 	var err error
 	cluster, err = NewCluster(ctx, ClusterConfig{
+		LeaderElection: LeaderElectionConfig{
+			Enabled:      true,
+			LockResource: "kapi-test-leader-election-lock",
+		},
 		Namespaces: []string{
 			testNamespace,
 		},

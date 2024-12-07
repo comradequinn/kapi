@@ -249,56 +249,68 @@ Once you have a client, you can perform various operations:
 
 Use the `Create` method to add a new resource to the cluster.
 
-  ```go
-  exampleResource := &ExampleResource{
-      Name:      "example-name",
-      Namespace: "example-namespace",
-      Spec: ExampleResourceSpec{
-          ExampleData: "initial value",
-      },
-  }
+```go
+exampleResource := &ExampleResource{
+    Name:      "example-name",
+    Namespace: "example-namespace",
+    Spec: ExampleResourceSpec{
+        ExampleData: "initial value",
+    },
+}
 
-  err := klient.Create(ctx, exampleResource)
-  ```
+err := klient.Create(ctx, exampleResource)
+```
 ##### Get a Resource
 
 Retrieve a specific resource using the `Get` method.
 
-  ```go
-  resource, err := klient.Get(ctx, "example-namespace", "example-name")
-  ```
+```go
+resource, err := klient.Get(ctx, "example-namespace", "example-name")
+```
 
 ##### List Resources
 
 List all resources of a specific type with the `List` method.
 
-  ```go
-  resources, err := klient.List(ctx)
-  ```
+```go
+resources, err := klient.List(ctx)
+```
 
 ##### Update a Resource
 
 Modify an existing resource using the `Update` method.
 
-  ```go
-  // ... code to get the resource to update omitted for brevity ...
+```go
+// ... code to get the resource to update omitted for brevity ...
 
-  exampleResource.Spec.ExampleData = "updated value"
-  
-  err = klient.Update(ctx, exampleResource)
+exampleResource.Spec.ExampleData = "updated value"
 
-  ```
+err = klient.Update(ctx, exampleResource)
+
+```
+
+In some cases, only subresource(s) may require updating, in which case the subresource(s) can be specified with variadic argument, as shown below.
+
+
+```go
+// ... code to get the resource to update omitted for brevity ...
+
+exampleResource.Status.Active = true // modifiy the subresource as required
+
+err = klient.Update(ctx, exampleResource, "status") // specify that the update applies only to the subresource
+
+```
 
 ##### Delete a Resource
 
 Remove a resource from the cluster with the `Delete` method.
 
-  ```go
-  // ... code to get the resource to update omitted for brevity ...
+```go
+// ... code to get the resource to update omitted for brevity ...
 
-  err = klient.Delete(ctx, exampleResource)
-  
-  ```
+err = klient.Delete(ctx, exampleResource)
+
+```
 
 ### Defining Custom Resources
 
@@ -320,6 +332,22 @@ type (
 In this example, `kapi.FieldUndefined` is used as a placeholder for fields that are not needed in the custom resource definition. This allows you to focus on defining only the necessary fields, such as `Spec`, while omitting others like `Status` or `Scale` if they are not required.
 
 Using type aliases, like `ExampleResource` and `ExampleResourceList` in the snippet above, improves code clarity both by providing meaningful names for types and by reducing the repetition of generic type arguments.
+
+### Deployment
+
+The lib-oriented approach of `kapi` allows for the definition and deployment of controllers and operators in a way that better suits existing architectures and deployment pipelines.
+
+Deploying a `kapi`-based controller is simply a matter of creating a `deployment` in your usual manner. By default a single replica deployment model is inferred by `kapi`, however multiple replicas may be configured to enable high availabilty, in which case the `LeaderElection` field on the `kapi.ClusterConfig`. As shown below.
+
+```go
+cluster, _ := kapi.NewCluster(ctx, kapi.ClusterConfig{
+    Namespaces: []string{"kapi-quickstart"},
+    LeaderElection: kapi.LeaderElectionConfig{
+        Enabled:      true,
+        LockResource: "kapi-quickstart-leader-election-lock",
+    },
+})
+```
 
 ## Metrics and Logging
 

@@ -10,12 +10,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Client can be used to perform various IO operations against resources on a k8s cluster
-type Client[TItem client.Object, TList client.ObjectList] struct {
-	getClient        func() (client.Client, error)
-	resourceType     reflect.Type
-	resourceListType reflect.Type
-}
+type (
+	// Client can be used to perform various IO operations against resources on a k8s cluster
+	Client[TItem client.Object, TList client.ObjectList] struct {
+		getClient        func() (client.Client, error)
+		resourceType     reflect.Type
+		resourceListType reflect.Type
+	}
+	// Subresource represents a section of a resource that can be modified independently of the resource as a whole
+	Subresource string
+)
+
+const (
+	SubresourceStatus Subresource = "status"
+	SubresourceScale  Subresource = "scale"
+)
 
 // Create creates a resource on the k8s cluster
 func (c *Client[TItem, TList]) Create(ctx context.Context, resource TItem) error {
@@ -30,17 +39,27 @@ func (c *Client[TItem, TList]) Create(ctx context.Context, resource TItem) error
 	return clt.Create(ctx, resource)
 }
 
-// Update modifies a resource on the k8s cluster
-func (c *Client[TItem, TList]) Update(ctx context.Context, resource TItem) error {
+// Update modifies a resource on the k8s cluster.
+// Optionally, specific subresources can be provided, which will limit updates to only those subresources
+func (c *Client[TItem, TList]) Update(ctx context.Context, resource TItem, subresources ...Subresource) error {
 	defer c.observe(ctx, "update", resource)()
-
 	clt, err := c.getClient()
 
 	if err != nil {
 		return err
 	}
 
-	return clt.Update(ctx, resource)
+	if len(subresources) == 0 {
+		return clt.Update(ctx, resource)
+	}
+
+	for _, subresource := range subresources {
+		if err = clt.SubResource(string(subresource)).Update(ctx, resource); err != nil {
+			return fmt.Errorf("unable to update subresource %v. %v", subresource, err)
+		}
+	}
+
+	return nil
 }
 
 // Delete removes a resource from the k8s cluster
